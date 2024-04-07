@@ -21,8 +21,10 @@ class LagrangianNN(nn.Module):
 
 
 def q_dot_dot(f, x):
-    grad, = torch.autograd.grad(f(x), x, create_graph=True)
+    (grad,) = torch.autograd.grad(f(x), x, create_graph=True)
     hessian = torch.autograd.functional.hessian(f, x, create_graph=True).reshape(2, 2)
+
+    assert hessian[1,1] != 0
     ddq_dot_dot = hessian[1, 1].reciprocal() * (grad[0] - hessian[1, 0] * x[1])
 
     return ddq_dot_dot

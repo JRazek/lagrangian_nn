@@ -7,11 +7,7 @@ import lagrangian as lag
 import sys
 
 device = 'cpu'
-
-def lagrangian_function(x):
-    m = 1
-    k = 1
-    return 0.5 * m * x[0][1].pow(2) - 0.5 * k * x[0][0].pow(2)
+model_path = 'model3.pth'
 
 def harmonic_osillator(t):
     omega = 1
@@ -59,12 +55,17 @@ def train(model, dataset, targets):
 
     losses = []
     
-    for epoch in range(100):
+    for epoch in range(10):
         loss_total = torch.tensor(0.0, device=device, requires_grad=True)
 
         for i in range(len(dataset)):
             optimizer.zero_grad()
             q_dot_dot_predicted = lag.q_dot_dot(model, dataset[i])
+
+            if q_dot_dot_predicted.isnan().any():
+                print('Nan detected')
+                continue
+
             loss_i = l2_loss(q_dot_dot_predicted, targets[i])
             loss_total = loss_total +  loss_i
 
@@ -76,7 +77,7 @@ def train(model, dataset, targets):
 def load_model_or_make_new():
     try:
         model = lag.LagrangianNN().to(device)
-        model.load_state_dict(torch.load('model.pth'))
+        model.load_state_dict(torch.load(model_path))
     except:
         model = lag.LagrangianNN().to(device)
     return model
@@ -84,11 +85,12 @@ def load_model_or_make_new():
 def main() -> int:
     model = load_model_or_make_new()
     
-    dataset, targets = generate_dataset(0, 1000)
+    dataset, targets = generate_dataset(100, 200)
     
-#    train(model, dataset, targets)
+    for i in range(100):
+        train(model, dataset, targets)
 
-#    torch.save(model.state_dict(), 'model.pth')
+    torch.save(model.state_dict(), model_path)
     
 #    plot_loss(losses)
 
