@@ -47,14 +47,6 @@ def plot_loss(losses):
     plt.yscale('log')
     plt.savefig('loss.png')
 
-def plot_test(model, dataset, targets):
-    import matplotlib.pyplot as plt
-    for i in range(len(dataset)):
-        q_dot_dot_predicted = lag.q_dot_dot(model, dataset[i])
-        plt.plot(q_dot_dot_predicted.item(), 'ro')
-#        plt.plot(i, targets[i].item(), 'bo')
-    plt.show()
-
 def epoch(model, dataset, targets):
     losses = []
     
@@ -114,12 +106,6 @@ def train_loop(model, lr, n) -> int:
         if (i+1) % 1000 == 0:
                 plt.cla()
                 plot_loss(mean_losses_epoch)
-
-   
-    test_dataset, test_targets = generate_dataset(100, 200, 1, 1)
-
-#    test_model(model, test_dataset, test_targets)
-
     
     return 0
 
