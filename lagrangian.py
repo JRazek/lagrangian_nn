@@ -5,8 +5,8 @@ import torch.nn.functional as F
 class LagrangianNN(nn.Module):
     def __init__(self):
         super(LagrangianNN, self).__init__()
-        self.fc1 = nn.Linear(2, 30)
-        self.fc2 = nn.Linear(30, 30)
+        self.fc1 = nn.Linear(2, 100)
+        self.fc2 = nn.Linear(100, 30)
         self.fc3 = nn.Linear(30, 10)
         self.fc4 = nn.Linear(10, 1)
         

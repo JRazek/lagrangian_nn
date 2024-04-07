@@ -11,21 +11,20 @@ import lagrangian as lag
 import sys
 
 device = 'cpu'
-model_path = 'model3.pth'
+model_path = 'model.pth'
 
-def harmonic_osillator(t):
-    omega = 1
-    amplitude = 1
-    return amplitude * np.cos(omega * t), -amplitude * omega * np.sin(omega * t), -amplitude * omega * omega * np.cos(omega * t)
+def harmonic_osillator(t, amplitude, omega):
+    return amplitude * np.cos(omega * t), -amplitude * omega * np.sin(omega * t), -amplitude * omega**2 * np.cos(omega * t)
 
 def l2_loss(q_dot_dot_predicted, q_dot_dot_actual):
     return (q_dot_dot_predicted - q_dot_dot_actual).pow(2)
 
-def generate_dataset(ranget_start, range_end):
+def generate_dataset(range_start, range_end, random_amplitude, random_omega):
     dataset = []
     targets = []
-    for t in range(ranget_start, range_end):
-        q, q_dot, q_dot_dot = harmonic_osillator(t)
+    for t in range(range_start, range_end):
+        q, q_dot, q_dot_dot = harmonic_osillator(t, random_amplitude, random_omega)
+
         dataset.append([q, q_dot])
         targets.append(q_dot_dot)
 
@@ -55,27 +54,27 @@ def plot_test(model, dataset, targets):
     plt.show()
 
 def train(model, dataset, targets):
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.002)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     losses = []
     
-    for epoch in range(10):
-        loss_total = torch.tensor(0.0, device=device, requires_grad=True)
+    loss_total = torch.tensor(0.0, device=device, requires_grad=True)
 
-        for i in range(len(dataset)):
-            optimizer.zero_grad()
-            q_dot_dot_predicted = lag.q_dot_dot(model, dataset[i])
+    for i in range(len(dataset)):
+        optimizer.zero_grad()
+        q_dot_dot_predicted = lag.q_dot_dot(model, dataset[i])
 
-            if q_dot_dot_predicted.isnan().any():
-                continue
+        if q_dot_dot_predicted.isnan().any():
+            print('Nan')
+            continue
 
-            loss_i = l2_loss(q_dot_dot_predicted, targets[i])
-            loss_i.backward()
-            optimizer.step()
-            loss_total = loss_total + loss_i
-            
-        losses.append(loss_total.detach().numpy())
-        print('Epoch: ', epoch, 'Loss: ', loss_total.mean().item())
+        loss_i = l2_loss(q_dot_dot_predicted, targets[i])
+        loss_total = loss_total + loss_i
+
+    loss_total.backward()
+    optimizer.step()
+        
+    losses.append(loss_total)
 
     return losses
 
@@ -89,20 +88,36 @@ def load_model_or_make_new():
 
 def main() -> int:
     model = load_model_or_make_new()
-    
-    dataset, targets = generate_dataset(100, 200)
-    
-    train(model, dataset, targets)
 
-    torch.save(model.state_dict(), model_path)
     
-#    plot_loss(losses)
+    mean_losses_epoch = []
+    for i in range(100):
+        print('Epoch: ', i)
 
-    test_dataset, test_targets = generate_dataset(100, 200)
+
+        random_amplitude = random.uniform(0, 1)
+        random_omega = random.uniform(0, 1)
+
+        random_n = random.randint(0, 100)
+
+        dataset, targets = generate_dataset(random_n, random_n + 30, random_amplitude, random_omega)
+        losses = train(model, dataset, targets)
+
+        loss = torch.stack(losses).mean()
+        mean_losses_epoch.append(loss.detach().numpy())
+
+        print('Loss: ', loss)
+
+        torch.save(model.state_dict(), model_path)
+
+    plot_loss(mean_losses_epoch)
+   
+
+    test_dataset, test_targets = generate_dataset(100, 200, 1, 1)
 
 #    test_model(model, test_dataset, test_targets)
 
-    plot_vector_field(model, lagrangian_path(model, torch.tensor([0.5, 0.5], dtype=torch.float32, device=device, requires_grad=True)))
+    plot_vector_field(model, lagrangian_path(model, torch.tensor([0, 1], dtype=torch.float32, device=device, requires_grad=True)))
     
     return 0
 
