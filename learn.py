@@ -104,14 +104,14 @@ def train_loop(model, lr, n) -> int:
             torch.save(model.state_dict(), model_path)
 
         if (i+1) % 1000 == 0:
-                plt.cla()
-                plot_loss(mean_losses_epoch)
+            plt.cla()
+            plot_loss(mean_losses_epoch)
     
     return 0
 
 def main():
     model = load_model_or_make_new()
-    train_loop(model, 1e-5, 100)
+    train_loop(model, 1e-3, 100)
 
     plt.cla()
     plot_vector_field(model, lagrangian_path(model, torch.tensor([0, 1], dtype=torch.float32, device=device, requires_grad=True)))
