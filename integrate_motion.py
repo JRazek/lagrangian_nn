@@ -20,7 +20,7 @@ def lagrangian_path(model, x):
     #uses range kutta 4
     #model yields acceleration - q_dot_dot.
     #for initial (q, q_dot), find path of q, q_dot
-    for _ in range(1000):
+    for _ in range(800):
         path.append(x.detach())
 
         k1 = differential(model, x)
@@ -39,6 +39,8 @@ def plot_vector_field(model, path=None):
     q = torch.linspace(-2, 2, 10)
     q_dot = torch.linspace(-2, 2, 10)
 
+    fig = plt.figure(figsize=(10, 10))
+
     for q_val, q_dot_val in product(q, q_dot):
         x = torch.tensor([q_val, q_dot_val], dtype=torch.float32, requires_grad=True)
         dx = differential(model, x)
@@ -51,5 +53,5 @@ def plot_vector_field(model, path=None):
 
     if path is not None:
         plt.plot(path[:, 0], path[:, 1], 'r')
-    plt.savefig('vector_field.png')
+    fig.savefig('vector_field.png')
     

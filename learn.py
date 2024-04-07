@@ -10,8 +10,10 @@ import lagrangian as lag
 
 import sys
 
+import matplotlib.pyplot as plt
+
 device = 'cpu'
-model_path = 'model_final.pth'
+model_path = 'model_softplus.pth'
 
 def harmonic_osillator(t, amplitude, phi):
     omega = 1
@@ -53,7 +55,7 @@ def plot_test(model, dataset, targets):
 #        plt.plot(i, targets[i].item(), 'bo')
     plt.show()
 
-def train(model, dataset, targets):
+def epoch(model, dataset, targets):
     losses = []
     
     loss_total = torch.tensor(0.0, device=device, requires_grad=True)
@@ -80,24 +82,23 @@ def load_model_or_make_new():
         model = lag.LagrangianNN().to(device)
     return model
 
-def main() -> int:
-    model = load_model_or_make_new()
+def train_loop(model, lr, n) -> int:
     
     mean_losses_epoch = []
 
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=800)
 
-    for i in range(10000):
+    for i in range(n):
         optimizer.zero_grad()
-        random_amplitude = random.uniform(-1, 1)
+        random_amplitude = random.uniform(-2, 2)
         random_phi = random.uniform(-1, 1)
 
         random_n = random.randint(0, 100)
 
         dataset, targets = generate_dataset(random_n, random_n + 30, random_amplitude, random_phi)
-        losses = train(model, dataset, targets)
+        losses = epoch(model, dataset, targets)
 
         loss = torch.stack(losses).mean()
         mean_losses_epoch.append(loss.detach().cpu().numpy())
@@ -107,15 +108,12 @@ def main() -> int:
 
         print('Epoch: ', i, 'Loss: ', loss.item(), 'LR: ', optimizer.param_groups[0]['lr'])
 
-        if i % 200 == 0:
+        if (i+1) % 200 == 0:
             torch.save(model.state_dict(), model_path)
 
         if (i+1) % 1000 == 0:
-            import matplotlib.pyplot as plt
-            plt.close()
-            plot_vector_field(model, lagrangian_path(model, torch.tensor([0, 1], dtype=torch.float32, device=device, requires_grad=True)))
-            plt.cla()
-            plot_loss(mean_losses_epoch)
+                plt.cla()
+                plot_loss(mean_losses_epoch)
 
    
     test_dataset, test_targets = generate_dataset(100, 200, 1, 1)
@@ -124,6 +122,13 @@ def main() -> int:
 
     
     return 0
+
+def main():
+    model = load_model_or_make_new()
+    train_loop(model, 1e-5, 100)
+
+    plt.cla()
+    plot_vector_field(model, lagrangian_path(model, torch.tensor([0, 1], dtype=torch.float32, device=device, requires_grad=True)))
 
 if __name__ == '__main__':
     main()
