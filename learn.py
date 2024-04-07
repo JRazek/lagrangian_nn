@@ -2,6 +2,10 @@ import torch
 
 import numpy as np
 
+from integrate_motion import lagrangian_path, plot_vector_field
+
+import random
+
 import lagrangian as lag
 
 import sys
@@ -51,7 +55,7 @@ def plot_test(model, dataset, targets):
     plt.show()
 
 def train(model, dataset, targets):
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.002)
 
     losses = []
     
@@ -63,16 +67,17 @@ def train(model, dataset, targets):
             q_dot_dot_predicted = lag.q_dot_dot(model, dataset[i])
 
             if q_dot_dot_predicted.isnan().any():
-                print('Nan detected')
                 continue
 
             loss_i = l2_loss(q_dot_dot_predicted, targets[i])
-            loss_total = loss_total +  loss_i
-
-        loss_total.backward()
-        optimizer.step()
+            loss_i.backward()
+            optimizer.step()
+            loss_total = loss_total + loss_i
+            
         losses.append(loss_total.detach().numpy())
-        print('Epoch: ', epoch, 'Loss: ', losses[-1].item())
+        print('Epoch: ', epoch, 'Loss: ', loss_total.mean().item())
+
+    return losses
 
 def load_model_or_make_new():
     try:
@@ -87,8 +92,7 @@ def main() -> int:
     
     dataset, targets = generate_dataset(100, 200)
     
-    for i in range(100):
-        train(model, dataset, targets)
+    train(model, dataset, targets)
 
     torch.save(model.state_dict(), model_path)
     
@@ -96,11 +100,12 @@ def main() -> int:
 
     test_dataset, test_targets = generate_dataset(100, 200)
 
-    test_model(model, test_dataset, test_targets)
+#    test_model(model, test_dataset, test_targets)
 
-    plot_test(model, dataset, targets)
+    plot_vector_field(model, lagrangian_path(model, torch.tensor([0.5, 0.5], dtype=torch.float32, device=device, requires_grad=True)))
     
     return 0
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
+    sys.exit()
