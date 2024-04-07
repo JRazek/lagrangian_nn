@@ -36,20 +36,20 @@ def lagrangian_path(model, x):
 def plot_vector_field(model, path=None):
     import matplotlib.pyplot as plt
 
-    q = torch.linspace(-1, 1, 10)
-    q_dot = torch.linspace(-1, 1, 10)
+    q = torch.linspace(-2, 2, 10)
+    q_dot = torch.linspace(-2, 2, 10)
 
     for q_val, q_dot_val in product(q, q_dot):
         x = torch.tensor([q_val, q_dot_val], dtype=torch.float32, requires_grad=True)
         dx = differential(model, x)
 
-        plt.quiver(q_val, q_dot_val, dx[0], dx[1], scale=20)
+        plt.quiver(q_val, q_dot_val, dx[0], dx[1], scale=30)
 
     plt.xlabel('q')
     plt.ylabel('q_dot')
+    plt.tight_layout()
 
     if path is not None:
         plt.plot(path[:, 0], path[:, 1], 'r')
-
-    plt.show()
+    plt.savefig('vector_field.png')
     

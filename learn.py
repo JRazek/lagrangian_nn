@@ -11,23 +11,23 @@ import lagrangian as lag
 import sys
 
 device = 'cpu'
-model_path = 'model.pth'
+model_path = 'model_final.pth'
 
-def harmonic_osillator(t, amplitude, omega):
-    return amplitude * np.cos(omega * t), -amplitude * omega * np.sin(omega * t), -amplitude * omega**2 * np.cos(omega * t)
+def harmonic_osillator(t, amplitude, phi):
+    omega = 1
+    return amplitude * np.cos(omega * t + phi), -amplitude * omega * np.sin(omega * t + phi), -amplitude * omega**2 * np.cos(omega * t + phi)
 
 def l2_loss(q_dot_dot_predicted, q_dot_dot_actual):
     return (q_dot_dot_predicted - q_dot_dot_actual).pow(2)
 
-def generate_dataset(range_start, range_end, random_amplitude, random_omega):
+def generate_dataset(range_start, range_end, random_amplitude, random_phi):
     dataset = []
     targets = []
     for t in range(range_start, range_end):
-        q, q_dot, q_dot_dot = harmonic_osillator(t, random_amplitude, random_omega)
+        q, q_dot, q_dot_dot = harmonic_osillator(t, random_amplitude, random_phi)
 
         dataset.append([q, q_dot])
         targets.append(q_dot_dot)
-
         
     dataset = torch.tensor(dataset, dtype=torch.float32, device=device, requires_grad=True)
     targets = torch.tensor(targets, dtype=torch.float32, device=device)
@@ -43,7 +43,7 @@ def plot_loss(losses):
     import matplotlib.pyplot as plt
     plt.plot(losses)
     plt.yscale('log')
-    plt.show()
+    plt.savefig('loss.png')
 
 def plot_test(model, dataset, targets):
     import matplotlib.pyplot as plt
@@ -54,25 +54,19 @@ def plot_test(model, dataset, targets):
     plt.show()
 
 def train(model, dataset, targets):
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
     losses = []
     
     loss_total = torch.tensor(0.0, device=device, requires_grad=True)
 
     for i in range(len(dataset)):
-        optimizer.zero_grad()
         q_dot_dot_predicted = lag.q_dot_dot(model, dataset[i])
 
-        if q_dot_dot_predicted.isnan().any():
-            print('Nan')
-            continue
+        assert not q_dot_dot_predicted.isnan().any()
 
         loss_i = l2_loss(q_dot_dot_predicted, targets[i])
         loss_total = loss_total + loss_i
 
     loss_total.backward()
-    optimizer.step()
         
     losses.append(loss_total)
 
@@ -88,36 +82,46 @@ def load_model_or_make_new():
 
 def main() -> int:
     model = load_model_or_make_new()
-
     
     mean_losses_epoch = []
-    for i in range(100):
-        print('Epoch: ', i)
 
 
-        random_amplitude = random.uniform(0, 1)
-        random_omega = random.uniform(0, 1)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=800)
+
+    for i in range(10000):
+        optimizer.zero_grad()
+        random_amplitude = random.uniform(-1, 1)
+        random_phi = random.uniform(-1, 1)
 
         random_n = random.randint(0, 100)
 
-        dataset, targets = generate_dataset(random_n, random_n + 30, random_amplitude, random_omega)
+        dataset, targets = generate_dataset(random_n, random_n + 30, random_amplitude, random_phi)
         losses = train(model, dataset, targets)
 
         loss = torch.stack(losses).mean()
-        mean_losses_epoch.append(loss.detach().numpy())
+        mean_losses_epoch.append(loss.detach().cpu().numpy())
 
-        print('Loss: ', loss)
+        optimizer.step()
+        scheduler.step(loss)
 
-        torch.save(model.state_dict(), model_path)
+        print('Epoch: ', i, 'Loss: ', loss.item(), 'LR: ', optimizer.param_groups[0]['lr'])
 
-    plot_loss(mean_losses_epoch)
+        if i % 200 == 0:
+            torch.save(model.state_dict(), model_path)
+
+        if (i+1) % 1000 == 0:
+            import matplotlib.pyplot as plt
+            plt.close()
+            plot_vector_field(model, lagrangian_path(model, torch.tensor([0, 1], dtype=torch.float32, device=device, requires_grad=True)))
+            plt.cla()
+            plot_loss(mean_losses_epoch)
+
    
-
     test_dataset, test_targets = generate_dataset(100, 200, 1, 1)
 
 #    test_model(model, test_dataset, test_targets)
 
-    plot_vector_field(model, lagrangian_path(model, torch.tensor([0, 1], dtype=torch.float32, device=device, requires_grad=True)))
     
     return 0
 
