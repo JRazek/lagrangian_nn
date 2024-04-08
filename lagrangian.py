@@ -13,10 +13,10 @@ class LagrangianNN(nn.Module):
     #takes x = (q, q_dot) as input
     #returns lagrangian of a system
     def forward(self, x):
-        y1 = F.relu(self.fc1(x))
-        y2 = F.sigmoid(self.fc2(y1))
-        y3 = F.relu(self.fc3(y2))
-        y4 = F.sigmoid(self.fc4(y3))
+        y1 = F.softplus(self.fc1(x))
+        y2 = F.softplus(self.fc2(y1))
+        y3 = F.softplus(self.fc3(y2))
+        y4 = F.softplus(self.fc4(y3))
         return y4
 
 
