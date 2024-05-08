@@ -1,3 +1,4 @@
+from math import pi
 import torch
 
 import numpy as np
@@ -85,7 +86,7 @@ def train_loop(model, lr, n) -> int:
     for i in range(n):
         optimizer.zero_grad()
         random_amplitude = random.uniform(-2, 2)
-        random_phi = random.uniform(-1, 1)
+        random_phi = random.uniform(-2*pi, 2*pi)
 
         random_n = random.randint(0, 100)
 
@@ -111,7 +112,7 @@ def train_loop(model, lr, n) -> int:
 
 def main():
     model = load_model_or_make_new()
-    train_loop(model, 1e-3, 100)
+    train_loop(model, 1e-3, 1000)
 
     plt.cla()
     plot_vector_field(model, lagrangian_path(model, torch.tensor([0, 1], dtype=torch.float32, device=device, requires_grad=True)))
