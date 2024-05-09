@@ -11,15 +11,13 @@ def differential(model, x) -> torch.Tensor:
 
     return torch.tensor([d_q, d_q_dot], dtype=torch.float32)
 
-def lagrangian_path(model, x):
-    dt = 0.01
-
+def lagrangian_path(model, x, rg4_steps, dt):
     path = []
 
     #uses range kutta 4
     #model yields acceleration - q_dot_dot.
     #for initial (q, q_dot), find path of q, q_dot
-    for _ in range(800):
+    for _ in range(rg4_steps):
         path.append(x.detach())
 
         k1 = differential(model, x)

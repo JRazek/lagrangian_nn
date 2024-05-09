@@ -22,9 +22,13 @@ def plot_vector_field(model, path_prediction, path_ground_truth, device, path):
     plt.ylabel('q_dot')
     plt.tight_layout()
     
-    plt.plot(path_prediction[:, 0], path_prediction[:, 1], color='red', )
+    plt.plot(path_prediction[:, 0], path_prediction[:, 1], color='red')
+    plt.plot(path_prediction[0, 0], path_prediction[0, 1], 'ro')
+    plt.text(path_prediction[0, 0], path_prediction[0, 1], 'Predicted', fontsize=12, color='red', verticalalignment='bottom', horizontalalignment='left', rotation=0)
 
     plt.plot(path_ground_truth[:, 0], path_ground_truth[:, 1], color='blue', linestyle='--')
+    plt.plot(path_ground_truth[0, 0], path_ground_truth[0, 1], 'bo')
+    plt.text(path_ground_truth[0, 0], path_ground_truth[0, 1], 'Ground truth', fontsize=12, color='blue', verticalalignment='bottom', horizontalalignment='right', rotation=0)
 
     fig.savefig(path)
     
