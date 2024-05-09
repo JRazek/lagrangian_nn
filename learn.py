@@ -39,7 +39,7 @@ def train_loop(model, lr, n, dataset_generator, device, iter_cb=None) -> int:
 
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=800)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=300)
 
     for i in range(n):
         optimizer.zero_grad()

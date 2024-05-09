@@ -45,12 +45,12 @@ def generate_harmonic_oscillator_dataset(device):
 
     dataset, targets = harmonic_oscillator_generate_path(path_start, path_start + 2*pi, 0.1, random_amplitude, random_phi, device)
 
-    noise = torch.randn_like(dataset) * 0.05
+    noise = torch.randn_like(dataset) * 0.02
     dataset += noise
 
     dataset.requires_grad_()
     
-    noise = torch.randn_like(targets) * 0.05
+    noise = torch.randn_like(targets) * 0.02
     targets += noise
 
     return dataset, targets
@@ -64,14 +64,10 @@ def train_iteration_cb(model, i, mean_losses):
         plt.cla()
         plot_loss(mean_losses, 'plots/losses_harmonic_oscillator.png')
         print('Saved model, plotted losses')
+    if (i+1) % 400 == 0:
+        plot_evaluation(model)
 
-
-def main():
-    model = load_model_or_make_new(model_path, device)
-    train_loop(model, 1e-3, 400, generate_harmonic_oscillator_dataset, device, train_iteration_cb)
-
-    plt.cla()
-
+def plot_evaluation(model):
     ground_truth_path, _ = harmonic_oscillator_generate_path(0, 2*pi, 0.1, 1, pi/2, device)
     ground_truth_path.requires_grad_()
 
@@ -81,6 +77,10 @@ def main():
     predicted_path = lagrangian_path(model, torch.tensor([0, 1], dtype=torch.float32, device=device, requires_grad=True), int(2*pi*n_rotations/rg4_dt), rg4_dt)
 
     plot_vector_field(model, predicted_path.detach(), ground_truth_path.detach(), device, 'plots/vector_field_harmonic_oscillator.png')
+
+def main():
+    model = load_model_or_make_new(model_path, device)
+    train_loop(model, 1e-3, 1200, generate_harmonic_oscillator_dataset, device, train_iteration_cb)
 
 if __name__ == '__main__':
     main()
