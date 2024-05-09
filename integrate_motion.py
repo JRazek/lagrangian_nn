@@ -11,7 +11,6 @@ def differential(model, x) -> torch.Tensor:
 
     return torch.tensor([d_q, d_q_dot], dtype=torch.float32)
 
-
 def lagrangian_path(model, x):
     dt = 0.01
 
@@ -33,7 +32,7 @@ def lagrangian_path(model, x):
 
     return torch.stack(path)
 
-def plot_vector_field(model, path=None):
+def plot_vector_field(model, path_prediction, path_ground_truth):
     import matplotlib.pyplot as plt
 
     q = torch.linspace(-2, 2, 10)
@@ -50,8 +49,10 @@ def plot_vector_field(model, path=None):
     plt.xlabel('q')
     plt.ylabel('q_dot')
     plt.tight_layout()
+    
+    plt.plot(path_prediction[:, 0], path_prediction[:, 1], color='red', )
 
-    if path is not None:
-        plt.plot(path[:, 0], path[:, 1], 'r')
+    plt.plot(path_ground_truth[:, 0], path_ground_truth[:, 1], color='blue', linestyle='--')
+
     fig.savefig('vector_field.png')
     
