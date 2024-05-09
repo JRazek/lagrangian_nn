@@ -7,12 +7,6 @@ import matplotlib.pyplot as plt
 def l2_loss(q_dot_dot_predicted, q_dot_dot_actual):
     return (q_dot_dot_predicted - q_dot_dot_actual).pow(2)
 
-def plot_loss(losses):
-    import matplotlib.pyplot as plt
-    plt.plot(losses)
-    plt.yscale('log')
-    plt.savefig('loss.png')
-
 def epoch(model, dataset, targets, device):
     losses = []
     
@@ -41,7 +35,7 @@ def load_model_or_make_new(model_path, device):
     return model
 
 def train_loop(model, lr, n, dataset_generator, device, iter_cb=None) -> int:
-    mean_losses_epoch = []
+    mean_losses = []
 
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
@@ -53,7 +47,7 @@ def train_loop(model, lr, n, dataset_generator, device, iter_cb=None) -> int:
         losses = epoch(model, dataset, targets, device)
 
         loss = torch.stack(losses).mean()
-        mean_losses_epoch.append(loss.detach().cpu().numpy())
+        mean_losses.append(loss.detach().cpu().numpy())
 
         optimizer.step()
         scheduler.step(loss)
@@ -61,7 +55,7 @@ def train_loop(model, lr, n, dataset_generator, device, iter_cb=None) -> int:
         print('Epoch: ', i, 'Loss: ', loss.item(), 'LR: ', optimizer.param_groups[0]['lr'])
 
         if not iter_cb is None:
-            iter_cb(i, mean_losses_epoch)
+            iter_cb(model, i, mean_losses)
 
     return 0
 

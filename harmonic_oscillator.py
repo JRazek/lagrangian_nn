@@ -3,7 +3,9 @@ import torch
 
 import numpy as np
 
-from integrate_motion import lagrangian_path, plot_vector_field
+from integrate_motion import lagrangian_path
+
+from plots import plot_loss, plot_vector_field
 
 import random
 
@@ -45,12 +47,20 @@ def generate_harmonic_oscillator_dataset(device):
 
     return dataset, targets
 
-def main():
-    device = 'cpu'
-    model_path = 'model_softplus.pth'
+device = 'cpu'
+model_path = 'models/model_softplus_harmonic_oscillator.pth'
 
+def train_iteration_cb(model, i, mean_losses):
+    if (i+1) % 100 == 0:
+        torch.save(model.state_dict(), model_path)
+        plt.cla()
+        plot_loss(mean_losses, 'plots/losses_harmonic_oscillator.png')
+        print('Saved model, plotted losses')
+
+
+def main():
     model = load_model_or_make_new(model_path, device)
-    train_loop(model, 1e-3, 1000, generate_harmonic_oscillator_dataset, device)
+    train_loop(model, 1e-3, 1000, generate_harmonic_oscillator_dataset, device, train_iteration_cb)
 
     plt.cla()
 
@@ -58,7 +68,7 @@ def main():
 
     predicted_path = lagrangian_path(model, torch.tensor([0, 1], dtype=torch.float32, device=device, requires_grad=True))
 
-    plot_vector_field(model, predicted_path.detach(), ground_truth_path.detach())
+    plot_vector_field(model, predicted_path.detach(), ground_truth_path.detach(), device, 'plots/vector_field_harmonic_oscillator.png')
 
 if __name__ == '__main__':
     main()
